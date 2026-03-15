@@ -23,6 +23,9 @@ from src.observability.dashboard.services.trace_service import TraceService
 logger = logging.getLogger(__name__)
 
 
+_PAGE_SIZE = 5
+
+
 def render() -> None:
     """Render the Ingestion Traces page."""
     st.header("🔬 Ingestion Traces")
@@ -34,9 +37,30 @@ def render() -> None:
         st.info("No ingestion traces recorded yet. Run an ingestion first!")
         return
 
-    st.subheader(f"📋 Trace History ({len(traces)})")
+    total = len(traces)
+    total_pages = max(1, (total + _PAGE_SIZE - 1) // _PAGE_SIZE)
 
-    for idx, trace in enumerate(traces):
+    if "trace_page" not in st.session_state:
+        st.session_state.trace_page = 0
+    # Clamp page index in case trace count changes
+    st.session_state.trace_page = min(st.session_state.trace_page, total_pages - 1)
+
+    page = st.session_state.trace_page
+    page_traces = traces[page * _PAGE_SIZE : (page + 1) * _PAGE_SIZE]
+
+    col_info, col_prev, col_next = st.columns([4, 1, 1])
+    with col_info:
+        st.subheader(f"📋 Trace History ({total})  —  Page {page + 1} / {total_pages}")
+    with col_prev:
+        if st.button("◀ Prev", disabled=(page == 0), key="trace_prev"):
+            st.session_state.trace_page -= 1
+            st.rerun()
+    with col_next:
+        if st.button("Next ▶", disabled=(page >= total_pages - 1), key="trace_next"):
+            st.session_state.trace_page += 1
+            st.rerun()
+
+    for idx, trace in enumerate(page_traces):
         trace_id = trace.get("trace_id", "unknown")
         started = trace.get("started_at", "—")
         total_ms = trace.get("elapsed_ms")

@@ -22,7 +22,7 @@ Design Principles:
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Dict, List
 
 from src.core.types import Chunk, Document
 from src.libs.splitter.splitter_factory import SplitterFactory
@@ -112,7 +112,7 @@ class DocumentChunker:
         """
         if not document.text or not document.text.strip():
             raise ValueError(f"Document {document.id} has no text content to split")
-        
+
         # Step 1: Use underlying splitter to get text fragments
         text_fragments = self._splitter.split_text(document.text)
         
@@ -136,7 +136,7 @@ class DocumentChunker:
             chunks.append(chunk)
         
         return chunks
-    
+
     def _generate_chunk_id(self, doc_id: str, index: int, text: str) -> str:
         """Generate unique and deterministic chunk ID.
         

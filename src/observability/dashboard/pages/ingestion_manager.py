@@ -13,7 +13,10 @@ from tempfile import NamedTemporaryFile
 
 import streamlit as st
 
+from src.libs.loader.loader_factory import LOADER_MAP
 from src.observability.dashboard.services.data_service import DataService
+
+_SUPPORTED_TYPES = [ext.lstrip(".") for ext in LOADER_MAP.keys()]
 
 
 def _run_ingestion(
@@ -86,7 +89,7 @@ def render() -> None:
     with col1:
         uploaded = st.file_uploader(
             "Select a file to ingest",
-            type=["pdf", "txt", "md", "docx"],
+            type=_SUPPORTED_TYPES,
             key="ingest_uploader",
         )
     with col2:
@@ -113,7 +116,7 @@ def render() -> None:
     if not docs:
         st.info(
             "**No documents ingested yet.** "
-            "Upload a PDF, TXT, MD, or DOCX file above and click \"Start Ingestion\" to begin."
+            f"Upload a {', '.join(t.upper() for t in _SUPPORTED_TYPES)} file above and click \"Start Ingestion\" to begin."
         )
         return
 

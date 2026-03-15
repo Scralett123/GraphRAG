@@ -47,6 +47,7 @@ sys.path.insert(0, str(project_root))
 from src.core.settings import load_settings, Settings
 from src.core.trace import TraceContext, TraceCollector
 from src.ingestion.pipeline import IngestionPipeline, PipelineResult
+from src.libs.loader.loader_factory import LOADER_MAP
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -109,13 +110,14 @@ def discover_files(path: str, extensions: List[str] = None) -> List[Path]:
     
     Args:
         path: File or directory path
-        extensions: List of file extensions to include (default: ['.pdf'])
+        extensions: List of file extensions to include
+            (default: all LOADER_MAP keys: .pdf, .docx)
     
     Returns:
         List of file paths to process
     """
     if extensions is None:
-        extensions = ['.pdf']
+        extensions = list(LOADER_MAP.keys())
     
     path = Path(path)
     

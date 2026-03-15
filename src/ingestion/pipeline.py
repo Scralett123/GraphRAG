@@ -27,7 +27,7 @@ from src.observability.logger import get_logger
 
 # Libs layer imports
 from src.libs.loader.file_integrity import SQLiteIntegrityChecker
-from src.libs.loader.pdf_loader import PdfLoader
+from src.libs.loader.loader_factory import get_loader
 from src.libs.embedding.embedding_factory import EmbeddingFactory
 from src.libs.vector_store.vector_store_factory import VectorStoreFactory
 
@@ -141,12 +141,8 @@ class IngestionPipeline:
         self.integrity_checker = SQLiteIntegrityChecker(db_path=str(resolve_path("data/db/ingestion_history.db")))
         logger.info("  ✓ FileIntegrityChecker initialized")
         
-        # Stage 2: Loader
-        self.loader = PdfLoader(
-            extract_images=True,
-            image_storage_dir=str(resolve_path(f"data/images/{collection}"))
-        )
-        logger.info("  ✓ PdfLoader initialized")
+        # Stage 2: Loader (resolved per-file in run() via LoaderFactory)
+        logger.info("  ✓ Loader factory ready (PDF, DOCX)")
         
         # Stage 3: Chunker
         self.chunker = DocumentChunker(settings)
@@ -254,8 +250,9 @@ class IngestionPipeline:
             logger.info("\n📄 Stage 2: Document Loading")
             _notify("load", 2)
             
+            loader = get_loader(file_path, collection=self.collection)
             _t0 = time.monotonic()
-            document = self.loader.load(str(file_path))
+            document = loader.load(str(file_path))
             _elapsed = (time.monotonic() - _t0) * 1000.0
             
             text_preview = document.text[:200].replace('\n', ' ') + "..." if len(document.text) > 200 else document.text
@@ -273,7 +270,7 @@ class IngestionPipeline:
             }
             if trace is not None:
                 trace.record_stage("load", {
-                    "method": "markitdown",
+                    "method": document.metadata.get("doc_type", "unknown"),
                     "doc_id": document.id,
                     "text_length": len(document.text),
                     "image_count": image_count,
