@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -305,8 +307,46 @@ def validate_settings(settings: Settings) -> None:
         raise SettingsError("Missing required field: observability.log_level")
 
 
+def _load_dotenv(repo_root: Path) -> None:
+    """Load .env from repo root into os.environ (if present).
+
+    Uses python-dotenv when available; silently skips if the library is not
+    installed or the file does not exist.
+    """
+    env_path = repo_root / ".env"
+    if not env_path.exists():
+        return
+    try:
+        from dotenv import load_dotenv  # type: ignore[import-untyped]
+        load_dotenv(dotenv_path=env_path, override=False)
+    except ImportError:
+        # Fallback: parse key=value lines manually
+        with env_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                os.environ.setdefault(key, value)
+
+
+def _expand_env_vars(text: str) -> str:
+    """Replace ``${VAR_NAME}`` placeholders with values from os.environ."""
+    return re.sub(
+        r"\$\{([^}]+)\}",
+        lambda m: os.environ.get(m.group(1), m.group(0)),
+        text,
+    )
+
+
 def load_settings(path: str | Path | None = None) -> Settings:
     """Load settings from a YAML file and validate required fields.
+
+    Automatically loads ``.env`` from the repo root (if present) and expands
+    ``${VAR_NAME}`` placeholders in the YAML before parsing, so secrets are
+    never stored in the config file.
 
     Args:
         path: Path to settings YAML.  Defaults to
@@ -318,8 +358,13 @@ def load_settings(path: str | Path | None = None) -> Settings:
     if not settings_path.exists():
         raise SettingsError(f"Settings file not found: {settings_path}")
 
-    with settings_path.open("r", encoding="utf-8") as handle:
-        data = yaml.safe_load(handle)
+    # Load .env so ${VAR} expansions work even without shell-level exports
+    _load_dotenv(REPO_ROOT)
+
+    raw = settings_path.read_text(encoding="utf-8")
+    expanded = _expand_env_vars(raw)
+
+    data = yaml.safe_load(expanded)
 
     settings = Settings.from_dict(data or {})
     validate_settings(settings)

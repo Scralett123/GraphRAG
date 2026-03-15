@@ -4,6 +4,11 @@
 # Cursor IDE
 .cursor/
 
+# Environment secrets — never commit
+.env
+.env.*
+!.env.example
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
