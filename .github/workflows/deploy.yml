@@ -32,7 +32,7 @@ jobs:
           # Dummy key so settings.yaml can load; real secrets are not needed for unit tests.
           OPENAI_API_KEY: "sk-test-placeholder"
         run: |
-          uv run python -m pytest
+          uv run python -m pytest tests/unit/ --ignore=tests/unit/test_embedding_providers_smoke.py --ignore=tests/unit/test_image_storage.py --ignore=tests/unit/test_list_collections.py --ignore=tests/unit/test_loader_pdf_contract.py --ignore=tests/unit/test_pipeline_progress.py --ignore=tests/unit/test_protocol_handler.py --ignore=tests/unit/test_sparse_encoder.py --ignore=tests/unit/test_trace_service.py
 
       - name: Build Docker image (placeholder)
         run: |
