@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  dashboard:
+    build: .
+    container_name: modular-rag-dashboard
+    restart: always
+    env_file:
+      - .env
+    environment:
+      # Fallbacks if not set in .env
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TRACE_FILE=${TRACE_FILE:-./logs/traces.jsonl}
+      - DASHBOARD_PORT=${DASHBOARD_PORT:-8501}
+      - DASHBOARD_HOST=${DASHBOARD_HOST:-0.0.0.0}
+    ports:
+      - "${DASHBOARD_PORT:-8501}:8501"
+    volumes:
+      # Full data directory (BM25, image index, etc.)
+      - ./data:/app/data
+      # Dedicated ChromaDB volume if you want to isolate it
+      - ./chroma_db:/app/data/db/chroma
+      # JSONL traces and other logs
+      - ./logs:/app/logs
+
+volumes:
+  # Named volumes can be used instead of bind mounts if desired.
+  # Examples:
+  #   rag_data:
+  #   rag_logs:
+  {}
+

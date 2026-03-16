@@ -1,0 +1,41 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local environment & secrets
+.env
+.env.*
+!.env.example
+
+# IDE / tooling
+.cursor/
+.vscode/
+.idea/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Data & logs (will be mounted as volumes)
+data/
+logs/
+chroma_db/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test artifacts & docs (not needed in runtime image)
+tests/
+docs/
+
